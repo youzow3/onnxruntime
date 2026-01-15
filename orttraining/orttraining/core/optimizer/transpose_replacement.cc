@@ -23,7 +23,19 @@ Status TransposeReplacement::Apply(Graph& graph,
     LOG_DEBUG_INFO(logger, "Exit TransposeReplacement optimization for input shape is None.");
     return Status::OK();
   }
-  auto perm = graph_utils::onnx_repeated_values::RetrieveValues<int64_t>(transpose_node.GetAttributes().at("perm"));
+
+  auto attr = transpose_node.GetAttributes();
+  InlinedVector<int64_t> perm;
+  if (attr.find("perm") != attr.end())
+	  perm = graph_utils::onnx_repeated_values::RetrieveValues<int64_t>(transpose_node.GetAttributes().at("perm"));
+  else
+  { 
+	  auto dim_size = input_shape->dim_size();
+	  perm.reserve(dim_size);
+	  for (auto i = 0; i < dim_size; i++)
+		  perm.push_back((dim_size - 1) - i);
+  }
+
   InlinedVector<int64_t> new_shape;
   new_shape.reserve(perm.size());
   int64_t last_permuted_axis = 0;
